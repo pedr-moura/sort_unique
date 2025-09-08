@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sorteio Amigo Secreto</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --background-color: #1A2E28;
+            --primary-color: #70A9A1;
+            --text-color: #F5F5F5;
+            --card-background: #23423A;
+            --card-border: #40796A;
+            --shadow-color: rgba(0, 0, 0, 0.2);
+            --leaf-color: rgba(112, 169, 161, 0.7);
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Lato', sans-serif;
+            background-image: linear-gradient(180deg, var(--background-color), #11201C);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        body::before,
+        body::after {
+            content: '';
+            position: fixed;
+            width: 450px;
+            height: 450px;
+            background-image: url('https://i.imgur.com/9gBvB8g.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            z-index: 1;
+            opacity: 0.1;
+            pointer-events: none;
+        }
+        body::before {
+            top: -80px;
+            left: -120px;
+        }
+        body::after {
+            top: auto;
+            left: auto;
+            bottom: -100px;
+            right: -150px;
+            transform: rotate(180deg);
+        }
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+        .title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--text-color);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px var(--shadow-color);
+        }
+        .subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 3rem;
+            font-weight: 300;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        #participants-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1.5rem;
+            justify-content: center;
+        }
+        .participant-card {
+            background-color: var(--card-background);
+            border-radius: 12px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid var(--card-border);
+            position: relative;
+            overflow: hidden;
+        }
+        .participant-card:not(.revealed):hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 15px var(--shadow-color);
+        }
+        .participant-card.revealed {
+            opacity: 0.6;
+            cursor: not-allowed;
+            border-color: transparent;
+            box-shadow: none;
+        }
+        .participant-card.revealed::after {
+            content: '✓ Sorteado';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 5px 0;
+            font-size: 0.8rem;
+            font-weight: bold;
+            background-color: var(--primary-color);
+            color: var(--background-color);
+            text-align: center;
+        }
+        .participant-card img {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 1 / 1;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--primary-color);
+            margin-bottom: 0.75rem;
+            box-shadow: 0 4px 8px var(--shadow-color);
+        }
+        .participant-card p {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 400;
+            font-size: 1.1rem;
+        }
+        #modal, #confirmation-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        #modal.show, #confirmation-modal.show {
+            display: flex;
+            opacity: 1;
+        }
+        .modal-content {
+            background-color: var(--card-background);
+            padding: 2.5rem;
+            border-radius: 15px;
+            text-align: center;
+            position: relative;
+            width: 90%;
+            max-width: 400px;
+            border: 2px solid var(--primary-color);
+            box-shadow: 0 0 25px rgba(112, 169, 161, 0.3);
+            transform: scale(0.95);
+            transition: transform 0.3s ease-in-out;
+        }
+        #modal.show .modal-content, #confirmation-modal.show .modal-content {
+            transform: scale(1);
+        }
+        #modal-close, #confirmation-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 1.8rem;
+            line-height: 1;
+            cursor: pointer;
+            transition: color 0.2s, transform 0.2s;
+        }
+        #modal-close:hover, #confirmation-close:hover {
+            color: var(--primary-color);
+            transform: rotate(90deg);
+        }
+        .modal-content h2 {
+            font-family: 'Poppins', sans-serif;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+        #drawn-person-img {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 4px solid var(--primary-color);
+            margin: 0 auto 1rem;
+            display: block;
+            object-fit: cover;
+            box-shadow: 0 5px 15px var(--shadow-color);
+        }
+        #drawn-person-name {
+            font-size: 2rem;
+            font-weight: 700;
+            font-family: 'Poppins', sans-serif;
+            color: var(--primary-color);
+        }
+        #confirmation-text {
+            font-size: 1.2rem;
+            line-height: 1.6;
+        }
+        .confirmation-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        .confirmation-buttons button {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid var(--primary-color);
+            transition: background-color 0.2s, color 0.2s;
+        }
+        #confirm-yes {
+            background-color: var(--primary-color);
+            color: var(--background-color);
+        }
+        #confirm-yes:hover {
+            background-color: transparent;
+            color: var(--primary-color);
+        }
+        #confirm-no {
+            background-color: transparent;
+            color: var(--primary-color);
+        }
+        #confirm-no:hover {
+            background-color: var(--primary-color);
+            color: var(--background-color);
+        }
+        #loading-spinner {
+            border: 4px solid rgba(245, 245, 245, 0.2);
+            border-left-color: var(--primary-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 3rem auto;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        #leaves-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .leaf {
+            position: absolute;
+            top: -50px;
+            background-color: var(--leaf-color);
+            border-radius: 5px 50%;
+            animation: fall linear infinite;
+        }
+        @keyframes fall {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(105vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+        @media (max-width: 600px) {
+            body {
+                padding: 1rem;
+            }
+            .title {
+                font-size: 2rem;
+            }
+            .subtitle {
+                font-size: 1rem;
+                margin-bottom: 2rem;
+            }
+            #participants-grid {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+                gap: 1rem;
+            }
+            body::before,
+            body::after {
+                width: 250px;
+                height: 250px;
+            }
+            body::before {
+                top: -40px;
+                left: -60px;
+            }
+            body::after {
+                bottom: -50px;
+                right: -70px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="leaves-container"></div>
+    <div class="container">
+        <h1 class="title">Amigo Secreto</h1>
+        <p class="subtitle">Selecione o seu nome para revelar o seu amigo secreto!</p>
+        <div id="participants-grid">
+            <div id="loading-spinner"></div>
+        </div>
+    </div>
+
+    <div id="modal">
+        <div class="modal-content">
+            <button id="modal-close">&times;</button>
+            <h2>Você tirou...</h2>
+            <img src="" alt="Foto do amigo secreto" id="drawn-person-img">
+            <p id="drawn-person-name"></p>
+        </div>
+    </div>
+
+    <div id="confirmation-modal">
+        <div class="modal-content">
+            <button id="confirmation-close">&times;</button>
+            <p id="confirmation-text"></p>
+            <div class="confirmation-buttons">
+                <button id="confirm-no">Não</button>
+                <button id="confirm-yes">Sim, sou eu</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const grid = document.getElementById('participants-grid');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const API_URL = window.location.origin;
+
+            const resultModal = document.getElementById('modal');
+            const resultModalClose = document.getElementById('modal-close');
+            const drawnPersonImg = document.getElementById('drawn-person-img');
+            const drawnPersonName = document.getElementById('drawn-person-name');
+            
+            function createFallingLeaves() {
+                const container = document.getElementById('leaves-container');
+                const numberOfLeaves = 20;
+                for (let i = 0; i < numberOfLeaves; i++) {
+                    const leaf = document.createElement('div');
+                    leaf.className = 'leaf';
+                    const size = Math.random() * 12 + 8;
+                    leaf.style.width = `${size}px`;
+                    leaf.style.height = `${size * 1.5}px`;
+                    leaf.style.left = `${Math.random() * 100}vw`;
+                    leaf.style.animationDuration = `${Math.random() * 8 + 7}s`;
+                    leaf.style.animationDelay = `${Math.random() * 10}s`;
+                    container.appendChild(leaf);
+                }
+            }
+
+            function showConfirmation(name) {
+                return new Promise(resolve => {
+                    const confirmModal = document.getElementById('confirmation-modal');
+                    const confirmText = document.getElementById('confirmation-text');
+                    const btnYes = document.getElementById('confirm-yes');
+                    const btnNo = document.getElementById('confirm-no');
+                    const btnClose = document.getElementById('confirmation-close');
+
+                    confirmText.innerHTML = `Você é <strong>${name}</strong>? <br>Clique em "Sim" para continuar.`;
+                    confirmModal.classList.add('show');
+
+                    const cleanup = (result) => {
+                        confirmModal.classList.remove('show');
+                        btnYes.removeEventListener('click', onYes);
+                        btnNo.removeEventListener('click', onNo);
+                        btnClose.removeEventListener('click', onNo);
+                        confirmModal.removeEventListener('click', onOverlay);
+                        resolve(result);
+                    };
+
+                    const onYes = () => cleanup(true);
+                    const onNo = () => cleanup(false);
+                    const onOverlay = (event) => {
+                        if (event.target === confirmModal) {
+                            onNo();
+                        }
+                    };
+
+                    btnYes.addEventListener('click', onYes);
+                    btnNo.addEventListener('click', onNo);
+                    btnClose.addEventListener('click', onNo);
+                    confirmModal.addEventListener('click', onOverlay);
+                });
+            }
+
+            async function fetchParticipants() {
+                try {
+                    loadingSpinner.style.display = 'block';
+                    grid.innerHTML = '';
+                    const response = await fetch(`${API_URL}/api/participants`);
+                    if (!response.ok) throw new Error('Não foi possível carregar os participantes.');
+                    const participants = await response.json();
+                    renderParticipants(participants);
+                } catch (error) {
+                    grid.innerHTML = `<p style="color: #ff8a80;">${error.message}</p>`;
+                } finally {
+                    loadingSpinner.style.display = 'none';
+                }
+            }
+
+            function renderParticipants(participants) {
+                grid.innerHTML = '';
+                participants.forEach(participant => {
+                    const card = document.createElement('div');
+                    card.className = 'participant-card';
+                    card.dataset.id = participant.id;
+                    card.dataset.name = participant.name;
+                    if (participant.hasRevealed) {
+                        card.classList.add('revealed');
+                    }
+                    card.innerHTML = `
+                        <img src="${participant.photoUrl}" alt="Foto de ${participant.name}">
+                        <p>${participant.name}</p>
+                    `;
+                    if (!participant.hasRevealed) {
+                        card.addEventListener('click', handleParticipantClick);
+                    }
+                    grid.appendChild(card);
+                });
+            }
+
+            async function handleParticipantClick(event) {
+                const card = event.currentTarget;
+                if (card.classList.contains('revealed')) return;
+
+                const drawerId = card.dataset.id;
+                const drawerName = card.dataset.name;
+
+                const userConfirmed = await showConfirmation(drawerName);
+                if (!userConfirmed) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`${API_URL}/api/reveal`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ drawerId: parseInt(drawerId) }),
+                    });
+                    if (!response.ok) {
+                        const err = await response.json();
+                        throw new Error(err.error || 'Falha ao revelar o amigo secreto.');
+                    }
+                    const drawnParticipant = await response.json();
+                    showResult(drawnParticipant);
+                    card.classList.add('revealed');
+                    card.removeEventListener('click', handleParticipantClick);
+                } catch (error) {
+                    alert(`Erro: ${error.message}`);
+                }
+            }
+
+            function showResult(participant) {
+                drawnPersonImg.src = participant.photoUrl;
+                drawnPersonImg.alt = `Foto de ${participant.name}`;
+                drawnPersonName.textContent = participant.name;
+                resultModal.classList.add('show');
+            }
+
+            function closeResultModal() {
+                resultModal.classList.remove('show');
+            }
+
+            resultModalClose.addEventListener('click', closeResultModal);
+            resultModal.addEventListener('click', (event) => {
+                if (event.target === resultModal) closeResultModal();
+            });
+            
+            createFallingLeaves();
+            fetchParticipants();
+        });
+    </script>
+</body>
+</html>
