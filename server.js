@@ -10,14 +10,15 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 const participants = [
-    { id: 1, name: 'Ana Silva', photoUrl: 'https://placehold.co/200x200/1a1a2a/00ffff?text=Ana' },
-    { id: 2, name: 'Bruno Costa', photoUrl: 'https://placehold.co/200x200/1a1a2a/00ffff?text=Bruno' },
-    { id: 3, name: 'Carla Dias', photoUrl: 'https://placehold.co/200x200/1a1a2a/00ffff?text=Carla' },
-    { id: 4, name: 'Daniel Faria', photoUrl: 'https://placehold.co/200x200/1a1a2a/00ffff?text=Daniel' },
-    { id: 5, name: 'Elisa Gomes', photoUrl: 'https://placehold.co/200x200/1a1a2a/00ffff?text=Elisa' },
-    { id: 6, name: 'Fábio Lima', photoUrl: 'https://placehold.co/200x200/1a1a2a/00ffff?text=F%C3%A1bio' },
-    { id: 7, name: 'Sofia Oliveira', photoUrl: 'https://placehold.co/200x200/1a1a2a/00ffff?text=Sofia' },
-    { id: 8, name: 'Ricardo Pereira', photoUrl: 'https://placehold.co/200x200/1a1a2a/00ffff?text=Ricardo' }
+    { id: 1, name: 'Pedro', photoUrl: 'https://i.ibb.co/W4vWz3kp/11.png' },
+    { id: 2, name: 'Lucas', photoUrl: 'https://i.ibb.co/LDRKbS3h/66.png' },
+    { id: 3, name: 'Edinaldo', photoUrl: 'https://i.ibb.co/9kSSnLr6/77.png' },
+    { id: 4, name: 'Sergio', photoUrl: 'https://i.ibb.co/xSJVcDfc/55.png' },
+    { id: 5, name: 'Ana Clara', photoUrl: 'https://i.ibb.co/kgHxK41P/33.png' },
+    { id: 6, name: 'Ana Bea', photoUrl: 'https://i.ibb.co/hFj0YLS5/88.png' },
+    { id: 7, name: 'Maria', photoUrl: 'https://i.ibb.co/fz854jQy/22.png' },
+    { id: 8, name: 'Phablo', photoUrl: 'https://i.ibb.co/ZpfQ8KF9/44.png' },
+    { id: 9, name: 'Isaías', photoUrl: 'https://i.ibb.co/ZpcCjdNn/C-digo-de-Isa-as.jpg' }
 ];
 
 let drawResults = {};
@@ -96,5 +97,4 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
     performDraw();
-
 });
