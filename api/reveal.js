@@ -1,6 +1,19 @@
 // api/reveal.js
-import { kv } from '@vercel/kv';
+import { put, list } from '@vercel/blob';
 import { participants } from '../_lib/data.js';
+
+// Função auxiliar para buscar um arquivo JSON do blob pela URL
+async function getJsonBlob(pathname) {
+    try {
+        const { blobs } = await list({ prefix: pathname, limit: 1 });
+        if (blobs.length === 0) return null;
+        
+        const response = await fetch(blobs[0].url);
+        return await response.json();
+    } catch (e) {
+        return null;
+    }
+}
 
 export default async function handler(request, response) {
     if (request.method !== 'POST') {
@@ -8,41 +21,35 @@ export default async function handler(request, response) {
     }
     
     const { drawerId } = request.body;
-
     if (!drawerId) {
         return response.status(400).json({ error: 'ID do participante não fornecido.' });
     }
     
-    // Busca os dados atuais do KV
-    const drawResults = await kv.get('drawResults');
-    const revealedDraws = await kv.get('revealedDraws') || {};
+    // 1. LER os dados atuais do Blob
+    const drawResults = await getJsonBlob('data/drawResults.json');
+    const revealedDraws = await getJsonBlob('data/revealedDraws.json') || {};
 
     if (!drawResults) {
-        return response.status(500).json({ error: 'O sorteio ainda não foi realizado. Um administrador precisa reiniciar o sorteio.' });
+        return response.status(500).json({ error: 'Sorteio não foi realizado.' });
     }
     
-    // Se já revelou, apenas retorna o resultado anterior para consistência
     if (revealedDraws[drawerId]) {
-         const previouslyDrawnId = drawResults[drawerId];
-         const previouslyDrawnParticipant = participants.find(p => p.id === previouslyDrawnId);
-         return response.status(200).json(previouslyDrawnParticipant);
+         const drawnId = drawResults[drawerId];
+         const participant = participants.find(p => p.id === drawnId);
+         return response.status(200).json(participant);
     }
     
-    const drawnId = drawResults[drawerId];
-    if (!drawnId) {
-        return response.status(404).json({ error: 'Sorteio não encontrado para este participante.' });
-    }
-
-    // Marca que esta pessoa revelou
+    // 2. MODIFICAR os dados na memória
     revealedDraws[drawerId] = true;
     
-    // Salva o objeto de revelados atualizado de volta no KV
-    await kv.set('revealedDraws', revealedDraws);
-    
-    const drawnParticipant = participants.find(p => p.id === drawnId);
-    if (!drawnParticipant) {
-        return response.status(500).json({ error: 'Ocorreu um erro ao encontrar o participante sorteado.' });
+    // 3. ESCREVER o arquivo inteiro de volta no Blob
+    try {
+        await put('data/revealedDraws.json', JSON.stringify(revealedDraws), { access: 'public', contentType: 'application/json' });
+    } catch (error) {
+        return response.status(500).json({ error: 'Falha ao salvar a revelação.' });
     }
 
+    const drawnId = drawResults[drawerId];
+    const drawnParticipant = participants.find(p => p.id === drawnId);
     response.status(200).json(drawnParticipant);
 }
