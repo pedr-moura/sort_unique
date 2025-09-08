@@ -9,8 +9,6 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// --- DADOS DOS PARTICIPANTES ---
-// Adicione ou altere os participantes aqui. O ID deve ser único.
 const participants = [
     { id: 1, name: 'Ana Silva', photoUrl: 'https://placehold.co/200x200/1a1a2a/00ffff?text=Ana' },
     { id: 2, name: 'Bruno Costa', photoUrl: 'https://placehold.co/200x200/1a1a2a/00ffff?text=Bruno' },
@@ -98,4 +96,5 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
     performDraw();
+
 });
